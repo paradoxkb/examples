@@ -1,0 +1,65 @@
+@font-face {
+  font-family: 'Gotham';
+  src: url("/fonts/GOTHAM-LIGHT.TTF");
+  font-weight: 400;
+  font-style: normal; }
+@font-face {
+  font-family: 'Cairo';
+  src: url("/fonts/cairo-regular.ttf");
+  font-weight: 400;
+  font-style: normal; }
+.client-business-area .business-grid .place-line, .client-business-area .business-grid .service-line {
+  transition: 1s; }
+  .client-business-area .business-grid .place-line:hover, .client-business-area .business-grid .service-line:hover {
+    cursor: pointer;
+    background: #bddffd; }
+.client-business-area .business-grid .place-line {
+  margin: 15px auto;
+  position: relative;
+  display: flex;
+  height: 200px; }
+  .client-business-area .business-grid .place-line .place-line-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 170px; }
+    .client-business-area .business-grid .place-line .place-line-img img {
+      max-width: 100%;
+      max-height: 100%; }
+  .client-business-area .business-grid .place-line .around-link {
+    position: absolute;
+    left: 15px;
+    bottom: 0; }
+.client-business-area .business-grid .service-line {
+  margin: 15px auto;
+  position: relative;
+  display: flex;
+  height: 200px; }
+  .client-business-area .business-grid .service-line .service-line-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 170px; }
+    .client-business-area .business-grid .service-line .service-line-img img {
+      max-width: 100%;
+      max-height: 100%; }
+  .client-business-area .business-grid .service-line .around-link {
+    position: absolute;
+    left: 15px;
+    bottom: 0; }
+.client-business-area .business-grid a {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 200px; }
+.client-business-area .services-filter-grid {
+  margin: 15px auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center; }
+.client-business-area .havent-business {
+  font-size: 16px; }
+
+/*# sourceMappingURL=styles.css.map */
