@@ -1,0 +1,182 @@
+import _ from 'lodash'
+import { Tracker } from 'meteor/tracker'
+import React from 'react'
+import { Link } from 'react-router-dom'
+import { getTranslate, toggleLoader, selectedVersion } from '...path/utilities'
+import * as CONSTANTS from '...path/client_const'
+import { Items, Images } from '...path/clientApi'
+
+const Globalize = getTranslate()
+
+const Item = ({ ...props }) => {
+    const { _id, name, image } = props.item
+    const { pathname } = image || {}
+    return (
+        <div className='col-md-6'>
+            <div className='item-item' style={{ backgroundImage: `url(${pathname})` }}>
+                <Link to={`/item/${_id}`}><span className='name'><mark>{name[selectedVersion]}</mark></span></Link>
+            </div>
+        </div>
+    )
+}
+
+class ItemsGrid extends React.Component {
+    constructor(props) {
+        super(props)
+
+        const { page } = props.match.params
+
+        this.subscribe = 1
+
+        this.state = {
+            Items: [],
+            page: +page || 1,
+            total: 0,
+            typesFilter: [],
+            types: []
+        }
+
+        this.getItems = this.getItems.bind(this)
+        this.handlePageClick = this.handlePageClick.bind(this)
+        this.filterByTypeHandler = this.filterByTypeHandler.bind(this)
+    }
+
+    componentDidMount() {
+        const ref = this;
+        let ItemsSubscriber = null
+
+        window.addEventListener('scroll', function () {
+            const calcResult = document.body.clientHeight - window.pageYOffset
+
+            if (calcResult < window.innerHeight * 1.2) {
+                ref.setState({ page: ref.state.page+1}, ref.getItems)
+            }
+        }.bind(this))
+
+        Tracker.autorun(function() {
+            if (!ref.subscribe) {
+                if (ItemsSubscriber) ItemsSubscriber.stop()
+                return
+            }
+
+            toggleLoader(true)
+            ItemsSubscriber = Meteor.subscribe('Items', () => {
+                ref.getItems()
+            })
+        })
+    }
+
+    componentWillUnmount() {
+        this.subscribe = 0
+    }
+
+    async getItems() {
+        const { page, typesFilter } = this.state
+        const options = {
+            limit: CONSTANTS.DEFAULT_LIMIT * page
+        }
+        const condition = { visible: true }
+        if (typesFilter.length) condition.type = { $in: typesFilter }
+
+        const types = (await Items.find({}, { fields: { type: 1 }}).fetch())
+            .map(t => t.type)
+            .reduce((cur, next) => {
+                if (!cur.includes(next)) cur.push(next)
+                return cur
+            }, [])
+        const Items = await Items.find(condition, options).fetch()
+        const total = await Items.find(condition).count()
+        const items = Items.length ? await this.modifiedItemsByImage(Items) : []
+
+        this.setState({ Items: items, total, types }, toggleLoader)
+    }
+
+    async modifiedItemsByImage(Items) {
+        const itemIds = Items.map(p => (p._id))
+        const images = await Images.find({
+            entityType: 'item',
+            entityId: { $in: itemIds }
+        }).fetch()
+        const result = Items.map(item => {
+            const img = images.filter(im => im.entityId === item._id)[0]
+
+            if (img) item.image = img
+
+            return item
+        })
+
+        return result
+    }
+
+    handlePageClick(data) {
+        const page = data.selected + 1;
+
+        this.setState({ page }, () => {
+            this.getItems();
+        });
+    }
+
+    filterByTypeHandler(event) {
+        const val = event.target.value.toLowerCase()
+        let { typesFilter } = this.state
+
+        toggleLoader(true)
+
+        if (typesFilter.includes(val)) {
+            typesFilter = typesFilter.filter(v => v !== val)
+        } else {
+            typesFilter.push(val)
+        }
+
+        this.setState({ typesFilter }, this.getItems)
+    }
+
+    render() {
+        const { Items, types, typesFilter } = this.state
+        const limit = CONSTANTS.DEFAULT_LIMIT
+        const preparedItemRows = Items.reduce(
+            (prev, cur, i) => {
+                if (!(i % 2)) {
+                    prev.push([cur])
+                } else {
+                    prev[prev.length - 1].push(cur)
+                }
+                return prev
+            }, [])
+
+        return(
+            <div className='Items-grid'>
+                <div className='row row-filter'>
+                    <div className='btn-group btn-group-toggle btns-filter' role='group' data-toggle='buttons'>
+                        {types.map(type => {
+                            return (
+                                <input
+                                    type='button'
+                                    key={Math.random()}
+                                    className={`btn btn-light btn-type-filter ${typesFilter.includes(type) ? 'active' : ''}`}
+                                    value={_.startCase(type)} onClick={this.filterByTypeHandler}
+                                />
+                            )
+                        })}
+                    </div>
+                </div>
+                {preparedItemRows.map(row => {
+                    return (
+                        <div key={Math.random()} className='row item-row'>
+                            {row.map(item => {
+                                return (
+                                    <Item
+                                        key={Math.random()}
+                                        item={item}
+                                    />
+                                )
+                            })}
+                        </div>
+                    )
+                })}
+            </div>
+        )
+    }
+}
+
+export default ItemsGrid
